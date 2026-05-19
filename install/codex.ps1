@@ -52,6 +52,16 @@ function Ensure-NodeJs {
   Say "Node.js LTS 安装完成。"
 }
 
+function Invoke-NpmInstall([string[]]$Arguments) {
+  $npmCmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
+  if ($npmCmd) {
+    & npm.cmd @Arguments
+    return
+  }
+
+  & npm @Arguments
+}
+
 function Backup-IfExists([string]$Path) {
   if (Test-Path -LiteralPath $Path) {
     $stamp = Get-Date -Format "yyyyMMddHHmmss"
@@ -109,7 +119,7 @@ function Ensure-CodexCli {
     return
   }
 
-  npm install -g $CodexPackage
+  Invoke-NpmInstall @("install", "-g", $CodexPackage)
 }
 
 function Launch-Codex {

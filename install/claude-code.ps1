@@ -48,6 +48,16 @@ function Ensure-NodeJs {
   Say "Node.js LTS 安装完成。"
 }
 
+function Invoke-NpmInstall([string[]]$Arguments) {
+  $npmCmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
+  if ($npmCmd) {
+    & npm.cmd @Arguments
+    return
+  }
+
+  & npm @Arguments
+}
+
 function Ensure-ClaudeCodeCli {
   Ensure-NodeJs
 
@@ -64,7 +74,7 @@ function Ensure-ClaudeCodeCli {
     return
   }
 
-  npm install -g $ClaudePackage
+  Invoke-NpmInstall @("install", "-g", $ClaudePackage)
 }
 
 function Launch-ClaudeCode {
