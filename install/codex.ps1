@@ -85,6 +85,11 @@ function Backup-IfExists([string]$Path) {
   }
 }
 
+function Write-Utf8NoBomFile([string]$Path, [string]$Value) {
+  $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+  [System.IO.File]::WriteAllText($Path, $Value, $utf8NoBom)
+}
+
 function Write-CodexConfig {
   New-Item -ItemType Directory -Path $CodexHome -Force | Out-Null
   Backup-IfExists $ConfigFile
@@ -103,7 +108,7 @@ wire_api = "responses"
 requires_openai_auth = true
 "@
 
-  Set-Content -LiteralPath $ConfigFile -Value $config -Encoding UTF8
+  Write-Utf8NoBomFile $ConfigFile $config
 }
 
 function Write-CodexAuth([string]$ApiKey) {
@@ -114,7 +119,7 @@ function Write-CodexAuth([string]$ApiKey) {
     OPENAI_API_KEY = $ApiKey
   } | ConvertTo-Json
 
-  Set-Content -LiteralPath $AuthFile -Value $auth -Encoding UTF8
+  Write-Utf8NoBomFile $AuthFile $auth
 }
 
 function Ensure-CodexCli {
