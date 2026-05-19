@@ -23,3 +23,4 @@ Or replace `codex.sh` with the script you want to run.
 
 - These scripts are copied from the private docs repo so they can be fetched publicly.
 - The docs repo stays unchanged.
+- Windows PowerShell scripts will auto-install Node.js LTS via `winget` when `node` / `npm` is missing.

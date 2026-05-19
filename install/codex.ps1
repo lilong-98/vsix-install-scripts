@@ -23,6 +23,35 @@ function Confirm-Yes([string]$Prompt, [bool]$DefaultYes = $false) {
   return @("y", "yes") -contains $answer.Trim().ToLowerInvariant()
 }
 
+function Ensure-NodeJs {
+  $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
+  $npmCommand = Get-Command npm -ErrorAction SilentlyContinue
+  if ($nodeCommand -and $npmCommand) {
+    $nodeVersion = try { & node --version 2>$null } catch { $nodeCommand.Source }
+    Say "Node.js 已安装：$nodeVersion"
+    return
+  }
+
+  Say "未检测到 Node.js / npm，准备自动安装 Node.js LTS。"
+
+  if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+    throw "未找到 winget。请先手动安装 Node.js LTS：https://nodejs.org/"
+  }
+
+  Say "开始通过 winget 安装 Node.js LTS..."
+  winget install --id OpenJS.NodeJS.LTS -e --accept-package-agreements --accept-source-agreements
+
+  if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    throw "Node.js 安装后仍未检测到 node。请重新打开 PowerShell 再试。"
+  }
+
+  if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+    throw "Node.js 安装后仍未检测到 npm。请重新打开 PowerShell 再试。"
+  }
+
+  Say "Node.js LTS 安装完成。"
+}
+
 function Backup-IfExists([string]$Path) {
   if (Test-Path -LiteralPath $Path) {
     $stamp = Get-Date -Format "yyyyMMddHHmmss"
@@ -65,6 +94,8 @@ function Write-CodexAuth([string]$ApiKey) {
 }
 
 function Ensure-CodexCli {
+  Ensure-NodeJs
+
   $codexCommand = Get-Command codex -ErrorAction SilentlyContinue
   if ($codexCommand) {
     $version = try { & codex --version 2>$null } catch { $codexCommand.Source }
@@ -75,11 +106,6 @@ function Ensure-CodexCli {
   Say "未检测到 Codex CLI。"
   if (-not (Confirm-Yes "是否使用 npm 安装 Codex？" $true)) {
     Say "已跳过安装。后续可手动运行：npm install -g $CodexPackage"
-    return
-  }
-
-  if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
-    Say "未找到 npm。请先安装 Node.js，再执行：npm install -g $CodexPackage"
     return
   }
 
