@@ -58,12 +58,26 @@ function Invoke-NpmInstall([string[]]$Arguments) {
   & npm @Arguments
 }
 
+function Get-ExecutableCommand([string]$Name) {
+  $cmdCommand = Get-Command "$Name.cmd" -ErrorAction SilentlyContinue
+  if ($cmdCommand) {
+    return $cmdCommand.Source
+  }
+
+  $command = Get-Command $Name -ErrorAction SilentlyContinue
+  if ($command) {
+    return $command.Source
+  }
+
+  return $null
+}
+
 function Ensure-ClaudeCodeCli {
   Ensure-NodeJs
 
-  $claudeCommand = Get-Command claude -ErrorAction SilentlyContinue
+  $claudeCommand = Get-ExecutableCommand "claude"
   if ($claudeCommand) {
-    $version = try { & claude --version 2>$null } catch { $claudeCommand.Source }
+    $version = try { & $claudeCommand --version 2>$null } catch { $claudeCommand }
     Say "Claude Code 已安装：$version"
     return
   }
@@ -78,13 +92,14 @@ function Ensure-ClaudeCodeCli {
 }
 
 function Launch-ClaudeCode {
-  if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
+  $claudeCommand = Get-ExecutableCommand "claude"
+  if (-not $claudeCommand) {
     Say "未找到 claude 命令，请安装后手动运行：claude"
     return
   }
 
   if (Confirm-Yes "是否立即启动 Claude Code？" $false) {
-    & claude
+    & $claudeCommand
   } else {
     Say "已跳过启动。请重开 PowerShell 后运行：claude"
   }

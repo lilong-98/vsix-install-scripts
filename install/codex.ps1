@@ -62,6 +62,20 @@ function Invoke-NpmInstall([string[]]$Arguments) {
   & npm @Arguments
 }
 
+function Get-ExecutableCommand([string]$Name) {
+  $cmdCommand = Get-Command "$Name.cmd" -ErrorAction SilentlyContinue
+  if ($cmdCommand) {
+    return $cmdCommand.Source
+  }
+
+  $command = Get-Command $Name -ErrorAction SilentlyContinue
+  if ($command) {
+    return $command.Source
+  }
+
+  return $null
+}
+
 function Backup-IfExists([string]$Path) {
   if (Test-Path -LiteralPath $Path) {
     $stamp = Get-Date -Format "yyyyMMddHHmmss"
@@ -106,9 +120,9 @@ function Write-CodexAuth([string]$ApiKey) {
 function Ensure-CodexCli {
   Ensure-NodeJs
 
-  $codexCommand = Get-Command codex -ErrorAction SilentlyContinue
+  $codexCommand = Get-ExecutableCommand "codex"
   if ($codexCommand) {
-    $version = try { & codex --version 2>$null } catch { $codexCommand.Source }
+    $version = try { & $codexCommand --version 2>$null } catch { $codexCommand }
     Say "Codex 已安装：$version"
     return
   }
@@ -123,13 +137,14 @@ function Ensure-CodexCli {
 }
 
 function Launch-Codex {
-  if (-not (Get-Command codex -ErrorAction SilentlyContinue)) {
+  $codexCommand = Get-ExecutableCommand "codex"
+  if (-not $codexCommand) {
     Say "未找到 codex 命令，请安装后手动运行：codex"
     return
   }
 
   if (Confirm-Yes "是否立即启动 Codex？" $false) {
-    & codex
+    & $codexCommand
   } else {
     Say "已跳过启动。需要使用时运行：codex"
   }
